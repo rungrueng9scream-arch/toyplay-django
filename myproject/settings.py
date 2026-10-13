@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
+import os
+import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,13 +26,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os
 
 # In production set SECRET_KEY in environment variables.
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-7%)74gdjj*4po9#p-#4!biy!vjb$di3br^67@l!xt(&sgvyj!9')
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-key-change-me")
 
 # SECURITY WARNING: keep debug off in production.
-DEBUG = os.environ.get('DEBUG', 'True').lower() in ('1', 'true', 'yes')
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-# รองรับทั้ง local และ PythonAnywhere; เพิ่ม host ผ่าน env ได้
-_allowed = os.environ.get('ALLOWED_HOSTS', 'Rungrueng.pythonanywhere.com,127.0.0.1,localhost,testserver')
+# รองรับ Render และ local
+_allowed = os.environ.get('ALLOWED_HOSTS', '.onrender.com,127.0.0.1,localhost,testserver')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
 
 
@@ -83,22 +86,11 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
-
-# Optional PostgreSQL (Render/Cloud): set DATABASE_URL env var
-if os.environ.get('DATABASE_URL'):
-    try:
-        import dj_database_url
-        DATABASES['default'] = dj_database_url.config(
-            conn_max_age=600,
-            ssl_require=not DEBUG,
-        )
-    except ImportError:
-        pass
 
 
 # Password validation
