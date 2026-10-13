@@ -141,6 +141,45 @@ def edit_product(request, pk):
 
 
 @user_passes_test(is_staff_user, login_url='login')
+def order_list(request):
+    qs = Order.objects.select_related("user").prefetch_related("items").order_by("-created_at")
+
+    q = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+
+    if q:
+        qs = qs.filter(Q(user__username__icontains=q) | Q(id__icontains=q))
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+
+    paginator = Paginator(qs, ITEMS_PER_PAGE)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "order_list.html", {
+        "orders": page_obj,
+        "page_obj": page_obj,
+        "q": q,
+        "status_filter": status_filter,
+        "statuses": Order.STATUS_CHOICES,
+    })
+
+
+@user_passes_test(is_staff_user, login_url='login')
+def update_order_status(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+    if request.method == "POST":
+        new_status = request.POST.get("status", "").strip()
+        valid_statuses = {key for key, _ in Order.STATUS_CHOICES}
+        if new_status in valid_statuses:
+            order.status = new_status
+            order.save(update_fields=["status"])
+            messages.success(request, f"อัปเดตคำสั่งซื้อ #{order.id} เป็น \"{order.get_status_display()}\" แล้ว")
+        else:
+            messages.error(request, "สถานะไม่ถูกต้อง")
+    return redirect("order_list")
+
+
+@user_passes_test(is_staff_user, login_url='login')
 def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
     name = product.name

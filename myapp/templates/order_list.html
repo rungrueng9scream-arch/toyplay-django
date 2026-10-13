@@ -1,0 +1,119 @@
+{% extends 'basetemplate.html' %}
+
+{% block title %}จัดการคำสั่งซื้อ - ToyPlay{% endblock %}
+
+{% block content %}
+<h1 class="section-title mb-4">📦 จัดการคำสั่งซื้อ</h1>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<form method="GET" class="row g-2 mb-4">
+    <div class="col-md-4">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="ค้นหา username / หมายเลขคำสั่งซื้อ">
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">ทุกสถานะ</option>
+            {% for key, label in statuses %}
+                <option value="{{ key }}" {% if status_filter == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-brand w-100" type="submit">กรอง</button>
+    </div>
+    <div class="col-md-2">
+        <a href="{% url 'order_list' %}" class="btn btn-outline-brand w-100">ล้าง</a>
+    </div>
+</form>
+
+<div class="card shadow border-0">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ลูกค้า</th>
+                        <th>วันที่</th>
+                        <th>รายการ</th>
+                        <th>ยอดรวม</th>
+                        <th>สถานะ</th>
+                        <th>อัปเดต</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td><strong>#{{ order.id }}</strong></td>
+                        <td>{{ order.user.username }}</td>
+                        <td class="small text-muted">{{ order.created_at|date:"d/m/Y H:i" }}</td>
+                        <td class="small">
+                            {% for item in order.items.all %}
+                                {{ item.product_name }} × {{ item.quantity }}<br>
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        </td>
+                        <td class="fw-bold">{{ order.total_price }} บาท</td>
+                        <td>
+                            <span class="badge {% if order.status == 'completed' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                {{ order.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <form action="{% url 'order_update' order.id %}" method="POST" class="d-flex gap-1">
+                                {% csrf_token %}
+                                <select name="status" class="form-select form-select-sm" style="width: 130px;">
+                                    {% for key, label in statuses %}
+                                        <option value="{{ key }}" {% if order.status == key %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-brand">บันทึก</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">ยังไม่มีคำสั่งซื้อ</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ q }}&status={{ status_filter }}&page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
+                    </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?q={{ q }}&status={{ status_filter }}&page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ q }}&status={{ status_filter }}&page={{ page_obj.next_page_number }}">ถัดไป</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

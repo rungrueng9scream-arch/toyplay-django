@@ -1,4 +1,4 @@
-from django.conf import settings
+﻿from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include, re_path
 from django.views.static import serve
@@ -34,6 +34,10 @@ urlpatterns = [
 
     # REST API (Bonus)
     path('api/', include('myapp.api_urls')),
+
+    # คำสั่งซื้อ (staff/admin)
+    path('dashboard/orders/', views.order_list, name='order_list'),
+    path('dashboard/orders/update/<int:pk>/', views.update_order_status, name='order_update'),
 
     # ตะกร้าสินค้า (reload trigger)
     path('cart/', views.cart_view, name='cart'),

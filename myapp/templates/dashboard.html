@@ -5,6 +5,7 @@
 {% block content %}
 <div class="container">
     <h2 class="fw-bold mb-4 text-dark">⚙️ หน้าจัดการระบบหลังร้าน</h2>
+    <a href="{% url 'order_list' %}" class="btn btn-brand mb-4">📦 จัดการคำสั่งซื้อ</a>
 
     {% if messages %}
         {% for message in messages %}
