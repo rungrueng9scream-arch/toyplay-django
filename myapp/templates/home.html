@@ -1,0 +1,103 @@
+{% extends 'basetemplate.html' %}
+{% load static %}
+
+{% block title %}หน้าหลัก - ToyPlay ร้านของเล่น{% endblock %}
+
+{% block content %}
+<section class="hero mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="hero-badge">NEW TOYS EVERY WEEK</span>
+            <h1 class="display-4 fw-bold mb-3">ToyPlay — ร้านของเล่นที่เด็กๆ หลงรัก</h1>
+            <p class="lead text-muted mb-4">
+                ค้นหาของเล่นยอดนิยม อัปเดตสินค้าใหม่ทุกสัปดาห์ พร้อมส่งตรงถึงบ้าน และจัดการสินค้าได้ง่ายสำหรับผู้ดูแลร้าน
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'product' %}" class="btn btn-brand btn-lg px-4">🛍️ เลือกซื้อสินค้า</a>
+                <a href="{% url 'register' %}" class="btn btn-accent btn-lg px-4">สมัครสมาชิก</a>
+            </div>
+        </div>
+        <div class="col-lg-5 text-center">
+            <div class="kpi-box">
+                <div class="display-5 fw-bold text-brand">🧸</div>
+                <h4 class="fw-bold mb-3">ของเล่นคุณภาพ พัฒนาจินตนาการ</h4>
+                <p class="text-muted mb-0">คุณภาพดี ปลอดภัย ในหลายหมวดหมู่</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="section-title h3 mb-0">สินค้าแนะนำ</h2>
+        <a href="{% url 'product' %}" class="btn btn-outline-brand">ดูทั้งหมด</a>
+    </div>
+
+    {% if featured_products %}
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+            {% for item in featured_products %}
+                <div class="col">
+                    <div class="card product-card h-100">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center text-muted" style="height: 220px;">
+                                ไม่มีรูปภาพ
+                            </div>
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="fw-bold mb-2">{{ item.name }}</h5>
+                            <div class="mb-3">
+                                <span class="price-badge">{{ item.price }} บาท</span>
+                                <span class="text-muted small ms-2">คงเหลือ {{ item.stock }} ชิ้น</span>
+                            </div>
+                            <div class="mt-auto">
+                                {% if user.is_authenticated %}
+                                    <form action="{% url 'cart_add' item.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-brand w-100">หยิบใส่ตะกร้า</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{% url 'login' %}" class="btn btn-outline-brand w-100">เข้าสู่ระบบเพื่อสั่งซื้อ</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="fs-1 mb-3">📦</div>
+            <h4 class="fw-bold">ยังไม่มีสินค้าในขณะนี้</h4>
+            <p class="mb-0">เพิ่มสินค้าจากหน้า Dashboard หรือกลับมาอีกครั้งภายหลัง</p>
+        </div>
+    {% endif %}
+</section>
+
+<section class="mb-4">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="kpi-box">
+                <div class="fs-2 mb-2">🚀</div>
+                <h5 class="fw-bold">สั่งง่าย</h5>
+                <p class="text-muted mb-0">เลือกสินค้า ใส่ตะกร้า แล้ว checkout ได้ทันที</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-box">
+                <div class="fs-2 mb-2">🛡️</div>
+                <h5 class="fw-bold">ปลอดภัย</h5>
+                <p class="text-muted mb-0">ระบบของเล่นคุณภาพและบัญชีผู้ใช้ที่มีสิทธิ์จริง</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-box">
+                <div class="fs-2 mb-2">🔍</div>
+                <h5 class="fw-bold">ค้นหาเร็ว</h5>
+                <p class="text-muted mb-0">ค้นหาสินค้า แบ่งหน้า และจัดการข้อมูลได้ง่าย</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

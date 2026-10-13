@@ -1,0 +1,253 @@
+{% extends 'basetemplate.html' %}
+
+{% block title %}หน้าจัดการระบบหลังร้าน{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="fw-bold mb-4 text-dark">⚙️ หน้าจัดการระบบหลังร้าน</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- ฝั่งซ้าย: จัดการสินค้า -->
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-success mb-3">➕ เพิ่มสินค้าใหม่พร้อมรูปภาพ</h5>
+                    <form action="{% url 'add_product' %}" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">ชื่อสินค้า</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">ราคา</label>
+                                <input type="number" step="0.01" min="0" name="price" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">จำนวนในคลัง</label>
+                                <input type="number" min="0" name="stock" class="form-control" value="0" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">แนบรูปภาพสินค้า</label>
+                                <input type="file" name="image" class="form-control" accept="image/*">
+                            </div>
+                            <div class="col-12 d-flex justify-content-between align-items-center mt-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                                    <label class="form-check-label" for="isActive">เปิดใช้งานสินค้า</label>
+                                </div>
+                                <button type="submit" class="btn btn-brand px-4 fw-bold">บันทึกสินค้า</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title fw-bold mb-0">📦 รายการสินค้าทั้งหมด</h5>
+                        <form method="GET" class="d-flex gap-2">
+                            <input type="hidden" name="uq" value="{{ user_q }}">
+                            <input type="hidden" name="upage" value="{{ user_page.number }}">
+                            <input type="text" name="pq" value="{{ product_q }}" class="form-control form-control-sm" placeholder="ค้นหาสินค้า">
+                            <button class="btn btn-sm btn-brand" type="submit">ค้นหา</button>
+                        </form>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>รูปภาพ</th>
+                                    <th>ชื่อสินค้า</th>
+                                    <th>ราคา</th>
+                                    <th>คลัง</th>
+                                    <th>สถานะ</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in products %}
+                                <tr>
+                                    <td>
+                                        {% if item.image %}
+                                            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-secondary text-white rounded text-center d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 10px;">ไม่มีรูป</div>
+                                        {% endif %}
+                                    </td>
+                                    <td><strong>{{ item.name }}</strong></td>
+                                    <td>{{ item.price }} บาท</td>
+                                    <td>{{ item.stock }} ชิ้น</td>
+                                    <td>
+                                        {% if item.is_active %}
+                                            <span class="badge bg-success">เปิดใช้งาน</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">ปิด</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'edit_product' item.id %}" class="btn btn-warning btn-sm fw-bold">แก้ไข</a>
+                                        <a href="{% url 'delete_product' item.id %}" class="btn btn-danger btn-sm fw-bold" onclick="return confirm('ต้องการลบสินค้านี้ใช่ไหม?')">ลบ</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">ไม่มีข้อมูลสินค้า</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if products.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center pagination-sm">
+                            {% if products.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?pq={{ product_q }}&uq={{ user_q }}&ppage={{ products.previous_page_number }}&upage={{ user_page.number }}">ก่อนหน้า</a>
+                                </li>
+                            {% endif %}
+                            {% for num in products.paginator.page_range %}
+                                {% if products.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?pq={{ product_q }}&uq={{ user_q }}&ppage={{ num }}&upage={{ user_page.number }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if products.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?pq={{ product_q }}&uq={{ user_q }}&ppage={{ products.next_page_number }}&upage={{ user_page.number }}">ถัดไป</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: จัดการสมาชิกและพนักงาน -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-primary mb-3">👤 เพิ่มสมาชิกหรือพนักงานใหม่</h5>
+                    <form action="{% url 'add_user' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อผู้ใช้ (Username)</label>
+                            <input type="text" name="username" class="form-control" placeholder="เช่น somchai_d" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">อีเมล (ไม่บังคับ)</label>
+                            <input type="email" name="email" class="form-control" placeholder="เช่น somchai@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">รหัสผ่าน</label>
+                            <input type="password" name="password" class="form-control" placeholder="รหัสผ่านเข้าใช้งาน" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ระดับสิทธิ์การใช้งาน</label>
+                            <select name="role" class="form-select">
+                                <option value="member">ลูกค้า / สมาชิกทั่วไป (เข้าหลังบ้านไม่ได้)</option>
+                                <option value="staff">พนักงานหลังร้าน (สามารถล็อกอินเข้าสิทธิ์หลังบ้านได้)</option>
+                                <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-brand w-100 fw-bold">บันทึกและสร้างบัญชี</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title fw-bold mb-0 text-dark">👤 รายชื่อสมาชิกและพนักงาน</h5>
+                        <form method="GET" class="d-flex gap-2">
+                            <input type="hidden" name="pq" value="{{ product_q }}">
+                            <input type="hidden" name="ppage" value="{{ product_page.number }}">
+                            <input type="text" name="uq" value="{{ user_q }}" class="form-control form-control-sm" placeholder="ค้นหาสมาชิก">
+                            <button class="btn btn-sm btn-brand" type="submit">ค้นหา</button>
+                        </form>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ชื่อผู้ใช้</th>
+                                    <th>ประเภท</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ u.username }}</strong>
+                                        <div class="small text-muted">{{ u.email|default:"-ไม่มีอีเมล-" }}</div>
+                                    </td>
+                                    <td>
+                                        {% if u.is_superuser %}
+                                            <span class="badge bg-danger">แอดมินสูงสุด</span>
+                                        {% elif u.is_staff %}
+                                            <span class="badge bg-warning text-dark">พนักงาน</span>
+                                        {% else %}
+                                            <span class="badge bg-info text-dark">สมาชิก</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'edit_user' u.id %}" class="btn btn-warning btn-sm fw-bold">แก้ไข</a>
+                                        {% if u.id != user.id %}
+                                            <a href="{% url 'delete_user' u.id %}" class="btn btn-outline-danger btn-sm fw-bold" onclick="return confirm('ต้องการลบบัญชีผู้ใช้นี้ใช่ไหม?')">ลบ</a>
+                                        {% else %}
+                                            <span class="text-muted small">บัญชีที่คุณใช้</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if users.has_other_pages %}
+                    <nav>
+                        <ul class="pagination justify-content-center pagination-sm">
+                            {% if users.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?pq={{ product_q }}&uq={{ user_q }}&ppage={{ product_page.number }}&upage={{ users.previous_page_number }}">ก่อนหน้า</a>
+                                </li>
+                            {% endif %}
+                            {% for num in users.paginator.page_range %}
+                                {% if users.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?pq={{ product_q }}&uq={{ user_q }}&ppage={{ product_page.number }}&upage={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if users.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?pq={{ product_q }}&uq={{ user_q }}&ppage={{ product_page.number }}&upage={{ users.next_page_number }}">ถัดไป</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

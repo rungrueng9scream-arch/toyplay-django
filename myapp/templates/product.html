@@ -1,0 +1,114 @@
+{% extends 'basetemplate.html' %}
+{% load static %}
+{% block title %}สินค้า - ร้านของเล่น{% endblock %}
+
+{% block content %}
+<section class="mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h1 class="fw-bold mb-1">สินค้าแนะนำ</h1>
+            <p class="text-muted mb-0">ค้นหา เลือกซื้อ และจัดการสินค้าได้ง่ายในหน้าเดียว</p>
+        </div>
+        <form method="GET" class="search-form d-flex gap-2">
+            <input
+                type="search"
+                name="q"
+                value="{{ q }}"
+                class="form-control"
+                placeholder="ค้นหาชื่อสินค้า..."
+                aria-label="ค้นหาสินค้า"
+            >
+            <button class="btn btn-brand" type="submit">ค้นหา</button>
+            {% if q %}
+                <a href="{% url 'product' %}" class="btn btn-outline-secondary">ล้าง</a>
+            {% endif %}
+        </form>
+    </div>
+</section>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+{% if products %}
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+        {% for item in products %}
+            <div class="col">
+                <div class="card product-card h-100">
+                    <div class="position-relative">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="height: 220px;">
+                                ไม่มีรูปภาพ
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title fw-bold mb-2">{{ item.name }}</h5>
+                        <div class="mb-3">
+                            <span class="price-badge">{{ item.price }} บาท</span>
+                            <span class="text-muted small ms-2">คงเหลือ {{ item.stock }} ชิ้น</span>
+                        </div>
+                        <div class="mt-auto">
+                            {% if user.is_authenticated %}
+                                <form action="{% url 'cart_add' item.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-brand w-100">
+                                        หยิบใส่ตะกร้า
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a href="{% url 'login' %}" class="btn btn-outline-brand w-100">
+                                    เข้าสู่ระบบเพื่อสั่งซื้อ
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+        <nav class="mt-5" aria-label="Pagination">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?q={{ q }}&page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?q={{ q }}&page={{ page_obj.next_page_number }}">ถัดไป</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        <div class="fs-1 mb-3">📦</div>
+        <h4 class="fw-bold">ยังไม่มีสินค้าในขณะนี้</h4>
+        <p class="mb-0">ลองค้นหาใหม่หรือกลับมาอีกครั้งภายหลัง</p>
+    </div>
+{% endif %}
+{% endblock %}

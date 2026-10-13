@@ -1,0 +1,64 @@
+{% extends 'basetemplate.html' %}
+
+{% block title %}เข้าสู่ระบบ - ToyPlay{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow border-0 mt-4 overflow-hidden">
+            <div class="text-center py-4" style="background: linear-gradient(135deg, #ff5a5f, #ffb703);">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-2" style="width:72px;height:72px;">
+                    <span style="font-size:34px;">🧸</span>
+                </div>
+                <h3 class="text-white fw-bold mb-0">เข้าสู่ระบบ</h3>
+                <p class="text-white-50 small mb-0">ยินดีต้อนรับกลับมาที่ ToyPlay</p>
+            </div>
+
+            <div class="card-body p-4">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} py-2 small">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if form.errors %}
+                    <div class="alert alert-danger py-2 small">
+                        ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
+                    </div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">ชื่อผู้ใช้</label>
+                        <div class="input-group">
+                            <span class="input-group-text">👤</span>
+                            <input type="text" id="username" name="username" class="form-control" placeholder="กรอกชื่อผู้ใช้" required autofocus>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">รหัสผ่าน</label>
+                        <div class="input-group">
+                            <span class="input-group-text">🔑</span>
+                            <input type="password" id="password" name="password" class="form-control" placeholder="กรอกรหัสผ่าน" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-brand w-100 py-2 fw-bold">เข้าสู่ระบบ</button>
+                </form>
+
+                <hr class="my-4">
+                <p class="text-center mb-0 small">
+                    ยังไม่มีบัญชีใช่ไหม?
+                    <a href="{% url 'register' %}" class="fw-bold text-decoration-none text-brand">สมัครสมาชิก</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.text-brand { color: #ff5a5f !important; }
+</style>
+{% endblock %}

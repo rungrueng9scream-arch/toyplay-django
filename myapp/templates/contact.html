@@ -1,0 +1,35 @@
+{% extends 'basetemplate.html' %}
+
+{% block title %}ติดต่อสอบถาม - ToyPlay{% endblock %}
+
+{% block content %}
+<section class="hero mb-4 text-center">
+    <span class="hero-badge">CONTACT US</span>
+    <h1 class="section-title display-5 mb-2">ติดต่อ ToyPlay</h1>
+    <p class="lead text-muted mb-0">อยากได้ของเล่นชิ้นไหน ทักมาหาเราได้เลย</p>
+</section>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="fw-bold mb-3">ข้อมูลร้าน</h4>
+                <p class="mb-2"><strong>ชื่อเจ้าของร้าน:</strong> นายรุ่งเรือง ยิ้มสายคำ</p>
+                <p class="mb-2"><strong>📞 เบอร์โทรศัพท์:</strong> 083-XXX-XXXX</p>
+                <p class="mb-2"><strong>📍 ที่อยู่ร้าน:</strong> ถนนสายกะเพราพริกสด แขวงใจกลางเมือง</p>
+                <p class="mb-0"><strong>⏰ เวลาเปิด-ปิด:</strong> 10:00 - 20:00 น. (หยุดวันหวยออก)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="fw-bold mb-3">บริการ</h4>
+                <p class="text-muted mb-3">มีบริการจัดส่งผ่านเดลิเวอรี่ทุกแพลตฟอร์ม หรือโทรสั่งล่วงหน้าแล้วมารับที่ร้านได้เลย!</p>
+                <a href="{% url 'product' %}" class="btn btn-brand">🛍️ ดูสินค้า</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
