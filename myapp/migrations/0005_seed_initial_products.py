@@ -4,34 +4,35 @@ from django.db import migrations
 
 
 PRODUCTS = [
-    ("ROBOT-X หุ่นยนต์บังคับ", "590.00", 12),
-    ("LEGO Castle ปราสาท", "1290.00", 5),
-    ("ตุ๊กตาหมีผ้ากำมะหยี่", "299.00", 20),
-    ("ปืนฉีดน้ำ Super Splash", "249.00", 15),
-    ("ลูกบอลสีรุ้ง", "99.00", 40),
-    ("รถบังคับวิทยุ Racing", "890.00", 8),
-    ("เกมบอร์ด Family Fun", "399.00", 10),
-    ("ดิโนเสาร์ T-Rex ใหญ่", "690.00", 6),
-    ("หมีแพนด้าผ้าขนนุ่ม", "349.00", 18),
-    ("เรือบังคับวิทยุ", "790.00", 7),
-    ("เครื่องบินบังคับ", "990.00", 5),
-    ("ตัวต่อไม้ Building Blocks", "499.00", 14),
-    ("จิ๊กซอว์สัตว์ป่า", "259.00", 25),
-    ("บล็อกเรียนรู้ ABC", "349.00", 20),
-    ("รถตู้ไอศกรีม", "289.00", 16),
-    ("หุ่นยนต์ดิ้นได้", "590.00", 9),
+    ("ROBOT-X หุ่นยนต์บังคับ", "590.00", 12, "products/e362cc5bd52f4b34276484cd02ef3430.jpg"),
+    ("LEGO Castle ปราสาท", "1290.00", 5, "products/a3ueui.jpg"),
+    ("ตุ๊กตาหมีผ้ากำมะหยี่", "299.00", 20, "products/images_4.jpg"),
+    ("ปืนฉีดน้ำ Super Splash", "249.00", 15, "products/98b1f26cc5bde34cdc78c15da2d2afc0ca114ec6_10106665_i2.webp"),
+    ("ลูกบอลสีรุ้ง", "99.00", 40, "products/images_3_iI2eiHu.jpg"),
+    ("รถบังคับวิทยุ Racing", "890.00", 8, "products/images_2.jpg"),
+    ("เกมบอร์ด Family Fun", "399.00", 10, "products/images_3.jpg"),
+    ("ดิโนเสาร์ T-Rex ใหญ่", "690.00", 6, "products/DM120Q98995740-Dino-Might-T-Rex-Era-of-Dinosaur3.jpg"),
+    ("หมีแพนด้าผ้าขนนุ่ม", "349.00", 18, "products/images_1.jpg"),
+    ("เรือบังคับวิทยุ", "790.00", 7, "products/5a.jpg"),
+    ("เครื่องบินบังคับ", "990.00", 5, "products/07616f81d5dadc60a8317dc29f3b12f7.jpg"),
+    ("ตัวต่อไม้ Building Blocks", "499.00", 14, "products/t1argv.png"),
+    ("จิ๊กซอว์สัตว์ป่า", "259.00", 25, "products/cn-11134207-7qukw-livfqjg0tldidd.jpg"),
+    ("บล็อกเรียนรู้ ABC", "349.00", 20, "products/images.jpg"),
+    ("รถตู้ไอศกรีม", "289.00", 16, "products/sg-11134201-7rd5d-lu84j15yoqon18.jpg"),
+    ("หุ่นยนต์ดิ้นได้", "590.00", 9, "products/39608d98af1805bf70e59189988fdbafe32d1cc1_10045007_i3.webp"),
 ]
 
 
 def seed_products(apps, schema_editor):
     Product = apps.get_model("myapp", "Product")
-    for name, price, stock in PRODUCTS:
+    for name, price, stock, image in PRODUCTS:
         if Product.objects.filter(name=name).exists():
             continue
         Product.objects.create(
             name=name,
             price=price,
             stock=stock,
+            image=image,
             is_active=True,
         )
 
