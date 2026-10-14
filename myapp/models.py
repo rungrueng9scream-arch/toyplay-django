@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Product(models.Model):
     name = models.CharField(max_length=100, verbose_name="ชื่อสินค้า")
@@ -97,3 +99,12 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
+
+
+# Ensure every user has a profile/cart so template access (e.g. avatar) never
+# raises RelatedObjectDoesNotExist and new accounts are usable immediately.
+@receiver(post_save, sender=User)
+def ensure_user_profile_and_cart(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+        Cart.objects.get_or_create(user=instance)
