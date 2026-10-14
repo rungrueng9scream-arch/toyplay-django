@@ -18,12 +18,34 @@
                 placeholder="ค้นหาชื่อสินค้า..."
                 aria-label="ค้นหาสินค้า"
             >
+            {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+            {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
             <button class="btn btn-brand" type="submit">ค้นหา</button>
-            {% if q %}
+            {% if q or selected_category or sort and sort != 'newest' %}
                 <a href="{% url 'product' %}" class="btn btn-outline-secondary">ล้าง</a>
             {% endif %}
         </form>
     </div>
+
+    <form method="GET" class="row g-2 mt-2 align-items-center">
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        <div class="col-6 col-md-3">
+            <select name="category" class="form-select" onchange="this.form.submit()">
+                <option value="">ทุกหมวดหมู่</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="sort" class="form-select" onchange="this.form.submit()">
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>ใหม่ล่าสุด</option>
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>ราคา: ต่ำ → สูง</option>
+                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>ราคา: สูง → ต่ำ</option>
+                <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>เก่าสุด</option>
+            </select>
+        </div>
+    </form>
 </section>
 
 {% if messages %}
@@ -41,28 +63,44 @@
             <div class="col">
                 <div class="card product-card h-100">
                     <div class="position-relative">
-                        {% if item.image %}
-                            <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
-                        {% else %}
-                            <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="height: 220px;">
-                                ไม่มีรูปภาพ
-                            </div>
+                        <a href="{% url 'product_detail' item.id %}" class="d-block">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="height: 220px;">
+                                    ไม่มีรูปภาพ
+                                </div>
+                            {% endif %}
+                        </a>
+                        {% if item.stock <= 0 %}
+                            <span class="badge bg-danger position-absolute top-0 end-0 m-2">สินค้าหมด</span>
+                        {% elif item.is_low_stock %}
+                            <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2">ใกล้หมด</span>
                         {% endif %}
                     </div>
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title fw-bold mb-2">{{ item.name }}</h5>
+                        {% if item.category %}
+                            <small class="text-muted">{{ item.category.name }}</small>
+                        {% endif %}
+                        <h5 class="card-title fw-bold mb-1">
+                            <a href="{% url 'product_detail' item.id %}" class="text-decoration-none text-dark">{{ item.name }}</a>
+                        </h5>
+                        <div class="mb-2 small text-warning">
+                            {% if item.avg_rating %}★ {{ item.avg_rating|floatformat:1 }} <span class="text-muted">({{ item.review_count }})</span>{% else %}<span class="text-muted">ยังไม่มีรีวิว</span>{% endif %}
+                        </div>
                         <div class="mb-3">
                             <span class="price-badge">{{ item.price }} บาท</span>
                             <span class="text-muted small ms-2">คงเหลือ {{ item.stock }} ชิ้น</span>
                         </div>
-                        <div class="mt-auto">
+                        <div class="mt-auto d-flex gap-2">
                             {% if user.is_authenticated %}
-                                <form action="{% url 'cart_add' item.id %}" method="POST">
+                                <form action="{% url 'cart_add' item.id %}" method="POST" class="flex-grow-1">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-brand w-100">
-                                        หยิบใส่ตะกร้า
+                                    <button type="submit" class="btn btn-brand w-100" {% if item.stock <= 0 %}disabled{% endif %}>
+                                        {% if item.stock <= 0 %}สินค้าหมด{% else %}หยิบใส่ตะกร้า{% endif %}
                                     </button>
                                 </form>
+                                <a href="{% url 'wishlist_toggle' item.id %}" class="btn btn-outline-danger" title="รายการโปรด">♥</a>
                             {% else %}
                                 <a href="{% url 'login' %}" class="btn btn-outline-brand w-100">
                                     เข้าสู่ระบบเพื่อสั่งซื้อ
@@ -80,7 +118,7 @@
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?q={{ q }}&page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
+                        <a class="page-link" href="?q={{ q }}&category={{ selected_category }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}">ก่อนหน้า</a>
                     </li>
                 {% endif %}
 
@@ -91,14 +129,14 @@
                         </li>
                     {% else %}
                         <li class="page-item">
-                            <a class="page-link" href="?q={{ q }}&page={{ num }}">{{ num }}</a>
+                            <a class="page-link" href="?q={{ q }}&category={{ selected_category }}&sort={{ sort }}&page={{ num }}">{{ num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?q={{ q }}&page={{ page_obj.next_page_number }}">ถัดไป</a>
+                        <a class="page-link" href="?q={{ q }}&category={{ selected_category }}&sort={{ sort }}&page={{ page_obj.next_page_number }}">ถัดไป</a>
                     </li>
                 {% endif %}
             </ul>

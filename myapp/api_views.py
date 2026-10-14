@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 
 from rest_framework import permissions, status, viewsets
@@ -7,9 +8,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from django.contrib.auth.models import User
-
-from .models import Product, Cart, CartItem, Order, OrderItem
+from .models import Product, CartItem, Order, OrderItem
 from .serializers import (
     ProductSerializer,
     RegisterSerializer,
@@ -71,20 +70,32 @@ class OrderViewSet(viewsets.ViewSet):
 
     def create(self, request):
         cart = get_or_create_cart(request.user)
-        items = cart.items.all()
-        if not items.exists():
+        cart_items = cart.items.select_related("product")
+        items = list(cart_items)
+        if not items:
             return Response({"detail": "ตะกร้าว่างเปล่า"}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.create(user=request.user, total_price=cart.total_price())
         for item in items:
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                product_name=item.product.name,
-                price=item.product.price,
-                quantity=item.quantity,
-            )
-        items.delete()
+            if item.quantity > item.product.stock:
+                return Response(
+                    {"detail": f"{item.product.name} มีสินค้าไม่เพียงพอ (เหลือ {item.product.stock})"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        with transaction.atomic():
+            order = Order.objects.create(user=request.user, total_price=cart.total_price())
+            for item in items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    product_name=item.product.name,
+                    price=item.product.price,
+                    quantity=item.quantity,
+                )
+                product = item.product
+                product.stock = max(product.stock - item.quantity, 0)
+                product.save(update_fields=["stock"])
+            cart_items.delete()
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
@@ -108,11 +119,18 @@ def cart_api(request):
     product_id = request.data.get("product_id")
     quantity = int(request.data.get("quantity", 1))
     product = get_object_or_404(Product, pk=product_id)
+
+    if product.stock <= 0:
+        return Response({"detail": "สินค้าหมดสต็อก"}, status=status.HTTP_400_BAD_REQUEST)
+
     item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    if not created:
-        item.quantity += quantity
-    else:
-        item.quantity = quantity
+    new_quantity = quantity if created else item.quantity + quantity
+    if new_quantity > product.stock:
+        return Response(
+            {"detail": f"มีสินค้าเหลือเพียง {product.stock} ชิ้น"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    item.quantity = new_quantity
     item.save()
     return Response({"detail": "เพิ่มลงตะกร้าแล้ว"}, status=status.HTTP_201_CREATED)
 

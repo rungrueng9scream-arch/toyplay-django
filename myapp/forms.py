@@ -1,9 +1,9 @@
 from django import forms
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 
-from .models import Product, UserProfile
+from .models import Product, UserProfile, Category, Review
 
 
 class RegisterForm(UserCreationForm):
@@ -43,9 +43,11 @@ class RegisterForm(UserCreationForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ("name", "price", "stock", "is_active", "image")
+        fields = ("name", "category", "description", "price", "stock", "is_active", "image")
         labels = {
             "name": "ชื่อสินค้า",
+            "category": "หมวดหมู่",
+            "description": "รายละเอียดสินค้า",
             "price": "ราคา",
             "stock": "จำนวนในคลัง",
             "is_active": "เปิดใช้งานสินค้า",
@@ -53,6 +55,8 @@ class ProductForm(forms.ModelForm):
         }
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "price": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "min": "0"}),
             "stock": forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
             "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -141,3 +145,27 @@ class ProfileForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.user is not None:
             self.fields["email"].initial = self.user.email
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ("name",)
+        labels = {"name": "ชื่อหมวดหมู่"}
+        widgets = {"name": forms.TextInput(attrs={"class": "form-control", "placeholder": "เช่น ตุ๊กตาและสัตว์นุ่ม"})}
+
+
+class ReviewForm(forms.ModelForm):
+    rating = forms.ChoiceField(
+        choices=[(i, f"{'★' * i} ({i} ดาว)") for i in range(5, 0, -1)],
+        label="ให้คะแนน",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    class Meta:
+        model = Review
+        fields = ("rating", "comment")
+        labels = {"comment": "ความคิดเห็น"}
+        widgets = {
+            "comment": forms.Textarea(attrs={"class": "form-control", "rows": 3, "placeholder": "แบ่งปันประสบการณ์ของคุณ..."}),
+        }

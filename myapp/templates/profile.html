@@ -34,6 +34,7 @@
                         <span class="badge bg-info text-dark">สมาชิก</span>
                     {% endif %}
                 </p>
+                <a href="{% url 'wishlist' %}" class="btn btn-outline-danger btn-sm w-100 mb-3">♥ รายการโปรดของฉัน</a>
 
                 <form action="{% url 'profile' %}" method="POST" enctype="multipart/form-data" class="text-start">
                         {% csrf_token %}
@@ -67,24 +68,52 @@
                         <strong>คำสั่งซื้อ #{{ order.id }}</strong>
                         <span class="text-muted small">{{ order.created_at|date:"d/m/Y H:i" }}</span>
                         {% if order.status == 'completed' %}
-                            <span class="badge bg-success">สำเร็จ</span>
+                            <span class="badge bg-success">{{ order.get_status_display }}</span>
                         {% elif order.status == 'cancelled' %}
-                            <span class="badge bg-danger">ยกเลิก</span>
+                            <span class="badge bg-danger">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'shipping' %}
+                            <span class="badge bg-info text-dark">{{ order.get_status_display }}</span>
+                        {% elif order.status == 'confirmed' %}
+                            <span class="badge bg-primary">{{ order.get_status_display }}</span>
                         {% else %}
-                            <span class="badge bg-warning text-dark">รอดำเนินการ</span>
+                            <span class="badge bg-warning text-dark">{{ order.get_status_display }}</span>
                         {% endif %}
                     </div>
+
+                    {% if order.status != 'cancelled' %}
+                    <div class="d-flex justify-content-between small mb-3 mt-1">
+                        {% for label in order.TRACKING_STATUSES %}
+                            {% with idx=forloop.counter0 %}
+                            <div class="text-center flex-fill {% if idx <= order.tracking_index %}text-success fw-bold{% else %}text-muted{% endif %}">
+                                <div class="fs-5">{% if idx <= order.tracking_index %}●{% else %}○{% endif %}</div>
+                                {% if idx == 0 %}รอ{% elif idx == 1 %}ยืนยัน{% elif idx == 2 %}จัดส่ง{% else %}สำเร็จ{% endif %}
+                            </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
                     <table class="table table-sm mb-2">
                         <tbody>
                             {% for item in order.items.all %}
                             <tr>
-                                <td>{{ item.product_name }}</td>
+                                <td>
+                                    {% if item.product %}
+                                        <a href="{% url 'product_detail' item.product.id %}" class="text-decoration-none">{{ item.product_name }}</a>
+                                    {% else %}
+                                        {{ item.product_name }}
+                                    {% endif %}
+                                </td>
                                 <td class="text-center">x{{ item.quantity }}</td>
                                 <td class="text-end">{{ item.subtotal }} บาท</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                    {% if order.discount_amount > 0 %}
+                        <div class="text-end small text-muted">ยอดก่อนลด {{ order.subtotal }} บาท</div>
+                        <div class="text-end small text-danger">ส่วนลด {% if order.coupon %}({{ order.coupon.code }}){% endif %} -{{ order.discount_amount }} บาท</div>
+                    {% endif %}
                     <div class="text-end fw-bold text-success">รวม {{ order.total_price }} บาท</div>
                 </div>
                 {% empty %}

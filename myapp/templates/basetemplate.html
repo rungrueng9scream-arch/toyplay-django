@@ -30,9 +30,14 @@
                             เมนูของเรา
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{% url 'product' %}">ดูเมนูทั้งหมด</a></li>
+                            <li><a class="dropdown-item" href="{% url 'product' %}">ดูสินค้าทั้งหมด</a></li>
+                            {% if nav_categories %}
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">เมนูแนะนำวันนี้</a></li>
+                            <li><h6 class="dropdown-header">หมวดหมู่สินค้า</h6></li>
+                            {% for cat in nav_categories %}
+                                <li><a class="dropdown-item" href="{% url 'product' %}?category={{ cat.id }}">🏷️ {{ cat.name }}</a></li>
+                            {% endfor %}
+                            {% endif %}
                         </ul>
                     </li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">ติดต่อสอบถาม</a></li>
@@ -46,6 +51,16 @@
                                 {% if nav_cart_count > 0 %}
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                     {{ nav_cart_count }}
+                                </span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-outline-light btn-sm px-3 position-relative" href="{% url 'wishlist' %}">
+                                ♥ โปรด
+                                {% if nav_wishlist_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                    {{ nav_wishlist_count }}
                                 </span>
                                 {% endif %}
                             </a>
@@ -73,6 +88,7 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                                 <li><a class="dropdown-item" href="{% url 'profile' %}">👤 โปรไฟล์ของฉัน</a></li>
                                 <li><a class="dropdown-item" href="{% url 'cart' %}">🛒 ตะกร้าสินค้า</a></li>
+                                <li><a class="dropdown-item" href="{% url 'wishlist' %}">♥ รายการโปรด</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'logout' %}">ออกจากระบบ</a></li>
                             </ul>

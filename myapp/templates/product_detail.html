@@ -1,0 +1,148 @@
+{% extends 'basetemplate.html' %}
+{% load static %}
+{% block title %}{{ product.name }} - ToyPlay{% endblock %}
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'info' %}info{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">หน้าหลัก</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'product' %}">สินค้า</a></li>
+        {% if product.category %}
+        <li class="breadcrumb-item"><a href="{% url 'product' %}?category={{ product.category.id }}">{{ product.category.name }}</a></li>
+        {% endif %}
+        <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="object-fit: cover; max-height: 420px;">
+            {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light text-muted" style="height: 360px;">ไม่มีรูปภาพ</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-7">
+        {% if product.category %}
+            <a href="{% url 'product' %}?category={{ product.category.id }}" class="badge bg-secondary text-decoration-none mb-2">{{ product.category.name }}</a>
+        {% endif %}
+        <h1 class="fw-bold mb-2">{{ product.name }}</h1>
+
+        <div class="mb-3 text-warning">
+            {% if avg_rating %}
+                <span class="fs-5">★ {{ avg_rating|floatformat:1 }}</span>
+                <span class="text-muted small">จาก {{ review_count }} รีวิว</span>
+            {% else %}
+                <span class="text-muted small">ยังไม่มีรีวิว เป็นคนแรกที่รีวิวสิ!</span>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <span class="price-badge fs-4">{{ product.price }} บาท</span>
+            {% if product.stock > 0 %}
+                <span class="badge bg-success ms-2">คงเหลือ {{ product.stock }} ชิ้น</span>
+            {% else %}
+                <span class="badge bg-danger ms-2">สินค้าหมด</span>
+            {% endif %}
+        </div>
+
+        {% if product.description %}
+            <p class="text-muted">{{ product.description|linebreaksbr }}</p>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            {% if user.is_authenticated %}
+                <form action="{% url 'cart_add' product.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-brand btn-lg fw-bold" {% if product.stock <= 0 %}disabled{% endif %}>
+                        {% if product.stock <= 0 %}สินค้าหมด{% else %}🛒 หยิบใส่ตะกร้า{% endif %}
+                    </button>
+                </form>
+                <a href="{% url 'wishlist_toggle' product.id %}" class="btn btn-lg {% if in_wishlist %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    {% if in_wishlist %}♥ อยู่ในรายการโปรด{% else %}♡ เพิ่มในรายการโปรด{% endif %}
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-brand btn-lg fw-bold">เข้าสู่ระบบเพื่อสั่งซื้อ</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h4 class="fw-bold mb-3">💬 รีวิวจากลูกค้า</h4>
+                {% for review in reviews %}
+                <div class="border-bottom py-3">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ review.user.username }}</strong>
+                        <small class="text-muted">{{ review.created_at|date:"d/m/Y" }}</small>
+                    </div>
+                    <div class="text-warning">{% for _ in "12345"|make_list %}{% if forloop.counter <= review.rating %}★{% else %}<span class="text-muted">★</span>{% endif %}{% endfor %}</div>
+                    {% if review.comment %}<p class="mb-0 mt-1">{{ review.comment }}</p>{% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-4 mb-0">ยังไม่มีรีวิวสำหรับสินค้านี้</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h4 class="fw-bold mb-3">{% if user_review %}แก้ไขรีวิวของคุณ{% else %}เขียนรีวิว{% endif %}</h4>
+                {% if user.is_authenticated %}
+                    <form action="{% url 'review_add' product.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ review_form.rating.label }}</label>
+                            {{ review_form.rating }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ review_form.comment.label }}</label>
+                            {{ review_form.comment }}
+                        </div>
+                        <button type="submit" class="btn btn-brand fw-bold">ส่งรีวิว</button>
+                    </form>
+                {% else %}
+                    <p class="text-muted mb-0"><a href="{% url 'login' %}">เข้าสู่ระบบ</a> เพื่อเขียนรีวิว</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <h4 class="fw-bold mb-3">สินค้าที่เกี่ยวข้อง</h4>
+        {% for item in related %}
+        <div class="card mb-3 shadow-sm border-0">
+            <div class="row g-0 align-items-center">
+                <div class="col-4">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" class="img-fluid rounded-start" alt="{{ item.name }}" style="height: 90px; width: 100%; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <div class="col-8">
+                    <div class="card-body py-2">
+                        <a href="{% url 'product_detail' item.id %}" class="text-decoration-none text-dark fw-bold d-block">{{ item.name }}</a>
+                        <span class="price-badge">{{ item.price }} บาท</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">ไม่มีสินค้าที่เกี่ยวข้อง</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

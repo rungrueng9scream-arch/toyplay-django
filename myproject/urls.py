@@ -9,10 +9,17 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('health/', views.health_check, name='health'),
     path('product/', views.product, name='product'),
+    path('product/<int:pk>/', views.product_detail, name='product_detail'),
+    path('product/<int:pk>/review/', views.review_add, name='review_add'),
     path('contact/', views.contact, name='contact'),
-    
+
+    # รายการโปรด
+    path('wishlist/', views.wishlist_view, name='wishlist'),
+    path('wishlist/toggle/<int:pk>/', views.wishlist_toggle, name='wishlist_toggle'),
+
     # ระบบหลังบ้าน
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/category/add/', views.add_category, name='add_category'),
     path('dashboard/product/add/', views.add_product, name='add_product'),
     path('dashboard/product/edit/<int:pk>/', views.edit_product, name='edit_product'),
     path('dashboard/product/delete/<int:pk>/', views.delete_product, name='delete_product'),

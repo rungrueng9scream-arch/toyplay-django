@@ -27,6 +27,25 @@
     </div>
 </section>
 
+{% if categories %}
+<section class="mb-5">
+    <h2 class="section-title h3 mb-3">หมวดหมู่สินค้า</h2>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+        {% for cat in categories %}
+        <div class="col">
+            <a href="{% url 'product' %}?category={{ cat.id }}" class="text-decoration-none">
+                <div class="kpi-box text-center h-100">
+                    <div class="fs-2 mb-2">🏷️</div>
+                    <h6 class="fw-bold mb-1 text-dark">{{ cat.name }}</h6>
+                    <small class="text-muted">{{ cat.product_count }} สินค้า</small>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
 <section class="mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="section-title h3 mb-0">สินค้าแนะนำ</h2>
@@ -38,15 +57,25 @@
             {% for item in featured_products %}
                 <div class="col">
                     <div class="card product-card h-100">
-                        {% if item.image %}
-                            <img src="{{ item.image.url }}" alt="{{ item.name }}">
-                        {% else %}
-                            <div class="d-flex align-items-center justify-content-center text-muted" style="height: 220px;">
-                                ไม่มีรูปภาพ
-                            </div>
-                        {% endif %}
+                        <a href="{% url 'product_detail' item.id %}" class="d-block">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center text-muted" style="height: 220px;">
+                                    ไม่มีรูปภาพ
+                                </div>
+                            {% endif %}
+                        </a>
                         <div class="card-body d-flex flex-column">
-                            <h5 class="fw-bold mb-2">{{ item.name }}</h5>
+                            {% if item.category %}
+                                <small class="text-muted">{{ item.category.name }}</small>
+                            {% endif %}
+                            <h5 class="fw-bold mb-1">
+                                <a href="{% url 'product_detail' item.id %}" class="text-decoration-none text-dark">{{ item.name }}</a>
+                            </h5>
+                            <div class="mb-2 small text-warning">
+                                {% if item.avg_rating %}★ {{ item.avg_rating|floatformat:1 }} <span class="text-muted">({{ item.review_count }})</span>{% else %}<span class="text-muted">ยังไม่มีรีวิว</span>{% endif %}
+                            </div>
                             <div class="mb-3">
                                 <span class="price-badge">{{ item.price }} บาท</span>
                                 <span class="text-muted small ms-2">คงเหลือ {{ item.stock }} ชิ้น</span>
