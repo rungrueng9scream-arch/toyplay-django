@@ -1,21 +1,36 @@
-from django.apps import AppConfig
-from django.db.models.signals import post_migrate
 import os
 
+from django.apps import AppConfig
+from django.db.models.signals import post_migrate
 
-def create_render_superuser(sender, **kwargs):
-    """Create a superuser automatically during migrate when env vars are set."""
-    from django.contrib.auth.models import User
 
+def sync_superuser_from_env(sender, **kwargs):
+    """Sync a superuser with the DJANGO_SUPERUSER_* env vars on every migrate/start.
+
+    - If the user does not exist: create it as an active superuser + staff.
+    - If it already exists: reset the password and ensure active superuser + staff.
+    """
     username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
-    email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "")
     password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+    email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "")
 
     if not username or not password:
         return
 
-    if not User.objects.filter(username=username).exists():
-        User.objects.create_superuser(username, email, password)
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={"email": email},
+    )
+    if email:
+        user.email = email
+    user.set_password(password)
+    user.is_superuser = True
+    user.is_staff = True
+    user.is_active = True
+    user.save()
 
 
 class MyAppConfig(AppConfig):
@@ -23,4 +38,4 @@ class MyAppConfig(AppConfig):
     name = "myapp"
 
     def ready(self):
-        post_migrate.connect(create_render_superuser, sender=self)
+        post_migrate.connect(sync_superuser_from_env, sender=self)

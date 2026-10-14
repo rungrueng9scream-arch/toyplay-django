@@ -1,8 +1,12 @@
+import os
 from decimal import Decimal
+from unittest import mock
 
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
+
+from .apps import sync_superuser_from_env
 
 from .models import (
     Product,
@@ -206,3 +210,39 @@ class CheckoutCouponStockTests(TestCase):
         sold_out = Product.objects.create(name="Sold Out", price=10, stock=0)
         self.client.post(reverse("cart_add", args=[sold_out.pk]))
         self.assertFalse(CartItem.objects.filter(product=sold_out).exists())
+
+
+class SuperuserSyncTests(TestCase):
+    def test_creates_superuser_from_env(self):
+        with mock.patch.dict(os.environ, {
+            "DJANGO_SUPERUSER_USERNAME": "bosstest",
+            "DJANGO_SUPERUSER_PASSWORD": "pass123",
+        }):
+            sync_superuser_from_env(sender=None)
+
+        u = User.objects.get(username="bosstest")
+        self.assertTrue(u.is_superuser)
+        self.assertTrue(u.is_staff)
+        self.assertTrue(u.is_active)
+        self.assertTrue(u.check_password("pass123"))
+
+    def test_updates_existing_password_and_flags(self):
+        User.objects.create_user("bosstest", password="oldpass")
+        with mock.patch.dict(os.environ, {
+            "DJANGO_SUPERUSER_USERNAME": "bosstest",
+            "DJANGO_SUPERUSER_PASSWORD": "newpass1",
+        }):
+            sync_superuser_from_env(sender=None)
+
+        u = User.objects.get(username="bosstest")
+        self.assertTrue(u.check_password("newpass1"))
+        self.assertFalse(u.check_password("oldpass"))
+        self.assertTrue(u.is_superuser and u.is_staff and u.is_active)
+
+    def test_noop_when_env_missing(self):
+        with mock.patch.dict(os.environ, {
+            "DJANGO_SUPERUSER_USERNAME": "",
+            "DJANGO_SUPERUSER_PASSWORD": "",
+        }):
+            sync_superuser_from_env(sender=None)
+        self.assertFalse(User.objects.filter(username="").exists())
