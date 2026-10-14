@@ -89,6 +89,7 @@ DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
+        ssl_require=os.environ.get('DATABASE_SSL_REQUIRE', 'False').lower() == 'true',
     )
 }
 
@@ -139,6 +140,9 @@ LOGIN_URL = 'login'
 import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.environ.get('MEDIA_ROOT', str(BASE_DIR / 'media'))
+# Make sure the upload directory exists so saving avatars/product images does not
+# fail on a fresh checkout or container.
+os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # Django REST Framework
 REST_FRAMEWORK = {

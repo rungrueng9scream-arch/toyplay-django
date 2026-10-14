@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: toyplay
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
+    startCommand: gunicorn myproject.wsgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: toyplay-db
+          property: connectionString
+      - key: DATABASE_SSL_REQUIRE
+        value: "True"
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: admin@example.com
+      - key: DJANGO_SUPERUSER_PASSWORD
+        generateValue: true
+
+databases:
+  - name: toyplay-db
+    plan: free
+    databaseName: toyplay
+    user: toyplay

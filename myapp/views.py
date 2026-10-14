@@ -38,6 +38,11 @@ def is_staff_user(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 
+def is_admin_user(user):
+    """Only true superusers (admins) may manage accounts."""
+    return user.is_authenticated and user.is_superuser
+
+
 # --- storefront pages ---
 
 def home(request):
@@ -194,6 +199,9 @@ def register_view(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Make sure dependent rows exist even if migrations/signals were skipped.
+            UserProfile.objects.get_or_create(user=user)
+            Cart.objects.get_or_create(user=user)
             login(request, user)
             messages.success(request, f"ยินดีต้อนรับ {user.username}! สมัครสมาชิกสำเร็จแล้ว")
             return redirect('home')
@@ -358,8 +366,8 @@ def delete_product(request, pk):
     return redirect('dashboard')
 
 
-# --- user CRUD (staff only) ---
-@user_passes_test(is_staff_user, login_url='login')
+# --- user CRUD (admin only) ---
+@user_passes_test(is_admin_user, login_url='login')
 def add_user(request):
     if request.method == "POST":
         form = StaffUserForm(request.POST)
@@ -376,6 +384,9 @@ def add_user(request):
                 user.is_staff = True
                 user.is_superuser = True
             user.save()
+            # Keep derived records in sync so profile/avatar/cart pages work.
+            UserProfile.objects.get_or_create(user=user)
+            Cart.objects.get_or_create(user=user)
             messages.success(request, f"สร้างบัญชี {user.username} เรียบร้อยแล้ว!")
             return redirect('dashboard')
         for field, errors in form.errors.items():
@@ -384,7 +395,7 @@ def add_user(request):
     return redirect('dashboard')
 
 
-@user_passes_test(is_staff_user, login_url='login')
+@user_passes_test(is_admin_user, login_url='login')
 def edit_user(request, pk):
     user = get_object_or_404(User, pk=pk)
     if request.method == "POST":
@@ -405,6 +416,8 @@ def edit_user(request, pk):
                 user.is_staff = False
                 user.is_superuser = False
             user.save()
+            UserProfile.objects.get_or_create(user=user)
+            Cart.objects.get_or_create(user=user)
             messages.success(request, f"แก้ไขบัญชี {user.username} เรียบร้อยแล้ว")
             return redirect('dashboard')
     else:
@@ -417,7 +430,7 @@ def edit_user(request, pk):
     })
 
 
-@user_passes_test(is_staff_user, login_url='login')
+@user_passes_test(is_admin_user, login_url='login')
 def delete_user(request, pk):
     if request.user.id != pk:
         user = get_object_or_404(User, pk=pk)
